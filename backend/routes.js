@@ -254,7 +254,7 @@ router.get('/dashboard', verificarToken, (req, res) => {
     const vendasStmt = db.prepare('SELECT COUNT(*) as total FROM vendas');
     const vendas = vendasStmt.get().total;
 
-    const faturamentoStmt = db.prepare('SELECT SUM(valor_total) as total FROM vendas WHERE strftime("%Y-%m", data_venda) = ?');
+    const faturamentoStmt = db.prepare("SELECT SUM(valor_total) as total FROM vendas WHERE strftime('%Y-%m', data_venda) = ?");
     const faturamento = faturamentoStmt.get(mesAtual).total || 0;
 
     res.json({ 
