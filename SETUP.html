@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📋 Tok Clean - Checklist Setup</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 600px;
+      width: 100%;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 28px;
+      color: #0369a1;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+    .step {
+      margin-bottom: 24px;
+      padding: 16px;
+      background: #f8fafc;
+      border-left: 4px solid #0ea5e9;
+      border-radius: 8px;
+    }
+    .step-number {
+      display: inline-block;
+      background: #0ea5e9;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 32px;
+      font-weight: 700;
+      margin-right: 12px;
+      font-size: 16px;
+    }
+    .step-title {
+      display: inline-block;
+      font-weight: 700;
+      color: #1e293b;
+      vertical-align: middle;
+    }
+    .step-desc {
+      margin-top: 8px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-left: 44px;
+    }
+    .command {
+      background: #1e293b;
+      color: #10b981;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      margin-top: 10px;
+      margin-left: 44px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .login-box {
+      background: #e0f2fe;
+      border-left: 4px solid #0369a1;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 24px 0;
+    }
+    .login-label {
+      font-weight: 600;
+      color: #0369a1;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .login-value {
+      font-family: 'Courier New', monospace;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      color: #1e293b;
+      font-weight: 500;
+    }
+    .checklist {
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 2px solid #e2e8f0;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .check-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      color: #64748b;
+      font-weight: 700;
+    }
+    .check-item.done .check-icon {
+      background: #10b981;
+      color: white;
+    }
+    .check-item.done {
+      color: #10b981;
+      text-decoration: line-through;
+    }
+    .features {
+      margin-top: 24px;
+      padding: 16px;
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+      border-radius: 8px;
+    }
+    .features-title {
+      font-weight: 700;
+      color: #059669;
+      margin-bottom: 12px;
+    }
+    .feature-list {
+      list-style: none;
+      font-size: 13px;
+      color: #445052;
+      line-height: 1.8;
+    }
+    .feature-list li::before {
+      content: "✓ ";
+      color: #10b981;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .error-box {
+      background: #fee2e2;
+      border-left: 4px solid #ef4444;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 24px;
+    }
+    .error-title {
+      font-weight: 700;
+      color: #dc2626;
+      margin-bottom: 8px;
+    }
+    .error-text {
+      font-size: 13px;
+      color: #991b1b;
+      line-height: 1.6;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      justify-content: center;
+    }
+    a.btn {
+      display: inline-block;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    a.btn-primary {
+      background: #0ea5e9;
+      color: white;
+    }
+    a.btn-primary:hover {
+      background: #0369a1;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <h1>🧹 Tok Clean</h1>
+  <div class="subtitle">Sistema de Gestão - Setup Inicial</div>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">Verificar Node.js</span>
+    <div class="step-desc">
+      Certifique-se que tem Node.js instalado:
+      <div class="command">node --version
+npm --version</div>
+      Se não tiver, baixe em: <strong>https://nodejs.org/</strong>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">Instalar Dependências</span>
+    <div class="step-desc">
+      Já foi feito! ✅ (npm install executado)
+      <div class="command">cd backend
+npm install</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">Iniciar o Servidor Backend</span>
+    <div class="step-desc">
+      Execute o comando para iniciar o servidor:
+      <div class="command">cd backend
+npm start</div>
+      Você deve ver: <strong style="color: #10b981;">"Servidor rodando em http://localhost:3000"</strong>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">4</span>
+    <span class="step-title">Abrir Frontend no Navegador</span>
+    <div class="step-desc">
+      Abra o arquivo: <strong>frontend/index.html</strong><br>
+      <em>Clique duplo ou arraste para o navegador</em>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">5</span>
+    <span class="step-title">Fazer Login</span>
+    <div class="step-desc">
+      Use as credenciais padrão:
+      <div class="login-box">
+        <span class="login-label">📧 Email:</span>
+        <div class="login-value">admin@tokclean.com</div>
+        <span class="login-label">🔐 Senha:</span>
+        <div class="login-value">admin123</div>
+        <em style="font-size: 12px; color: #0369a1;">⚠️ Altere a senha após o primeiro login!</em>
+      </div>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="features-title">✨ O Sistema Inclui:</div>
+    <ul class="feature-list">
+      <li>Autenticação segura com diferentes níveis</li>
+      <li>Gestão completa de clientes (CRUD)</li>
+      <li>Gestão de produtos e estoque</li>
+      <li>Controle de vendas com atualização automática</li>
+      <li>Dashboard com estatísticas em tempo real</li>
+      <li>Relatórios de vendas e produtos</li>
+      <li>Histórico/Logs com rastreamento completo</li>
+      <li>Responsivo para desktop, tablet e mobile</li>
+    </ul>
+  </div>
+
+  <div class="checklist">
+    <div style="font-weight: 700; color: #1e293b; margin-bottom: 16px;">✓ Checklist de Início:</div>
+    <div class="check-item done">
+      <div class="check-icon">✓</div>
+      Projeto criado
+    </div>
+    <div class="check-item done">
+      <div class="check-icon">✓</div>
+      Dependências instaladas
+    </div>
+    <div class="check-item">
+      <div class="check-icon">→</div>
+      Iniciar servidor backend (npm start)
+    </div>
+    <div class="check-item">
+      <div class="check-icon">→</div>
+      Abrir frontend no navegador
+    </div>
+    <div class="check-item">
+      <div class="check-icon">→</div>
+      Fazer login
+    </div>
+    <div class="check-item">
+      <div class="check-icon">→</div>
+      Criar primeiro cliente
+    </div>
+    <div class="check-item">
+      <div class="check-icon">→</div>
+      Criar primeiro produto
+    </div>
+    <div class="check-item">
+      <div class="check-icon">→</div>
+      Fazer primeira venda
+    </div>
+  </div>
+
+  <div class="error-box">
+    <div class="error-title">🚨 Se tiver erros:</div>
+    <div class="error-text">
+      <strong>Erro de conexão?</strong> Verifique se o backend está rodando (npm start).<br>
+      <strong>npm not found?</strong> Instale Node.js: https://nodejs.org/<br>
+      <strong>Porta 3000 em uso?</strong> Mude em backend/server.js a constante PORT.<br>
+      <strong>Email já existe?</strong> Use outro email ou delete do banco de dados.
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 24px; color: #64748b; font-size: 12px;">
+    📁 Estrutura: tok_clean/ → backend/ (servidor) + frontend/ (interface)<br>
+    💾 Banco de dados: SQLite (arquivo tokclean.db) - criado automaticamente
+  </div>
+
+</div>
+
+</body>
+</html>
