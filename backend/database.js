@@ -72,12 +72,16 @@ db.exec(`
 `);
 
 // Verificar se há usuário admin padrão, senão criar
-const adminCheck = db.prepare('SELECT * FROM usuarios WHERE nivel = ?');
-const adminRow = adminCheck.get('admin');
-if (!adminRow) {
-  const senhaHash = bcrypt.hashSync('admin123', 10);
-  const insertAdmin = db.prepare('INSERT INTO usuarios (nome, email, senha, nivel) VALUES (?, ?, ?, ?)');
-  insertAdmin.run('Administrador', 'admin@tokclean.com', senhaHash, 'admin');
+try {
+  const adminCheck = db.prepare('SELECT * FROM usuarios WHERE nivel = ?');
+  const adminRow = adminCheck.get('admin');
+  if (!adminRow) {
+    const senhaHash = bcrypt.hashSync('admin123', 10);
+    const insertAdmin = db.prepare('INSERT INTO usuarios (nome, email, senha, nivel) VALUES (?, ?, ?, ?)');
+    insertAdmin.run('Administrador', 'admin@tokclean.com', senhaHash, 'admin');
+  }
+} catch (err) {
+  console.error('Erro ao criar admin:', err);
 }
 
 module.exports = db;
