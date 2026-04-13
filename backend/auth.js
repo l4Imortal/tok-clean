@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const db = require('./database');
 
-const SECRET_KEY = 'tokclean-secret-key-2024';
+const SECRET_KEY = 'tokclean-secret-key-2026';
 
 // Middleware para verificar JWT
 const verificarToken = (req, res, next) => {
@@ -31,11 +31,11 @@ const verificarAdmin = (req, res, next) => {
 
 // Função para fazer login
 const fazerLogin = (email, senha, callback) => {
-  db.get('SELECT * FROM usuarios WHERE email = ?', [email], async (err, usuario) => {
-    if (err) return callback({ erro: 'Erro no banco de dados' });
+  try {
+    const usuario = db.prepare('SELECT * FROM usuarios WHERE email = ?').get(email);
     if (!usuario) return callback({ erro: 'Usuário não encontrado' });
 
-    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+    const senhaValida = bcrypt.compareSync(senha, usuario.senha);
     if (!senhaValida) return callback({ erro: 'Senha incorreta' });
 
     const token = jwt.sign(
@@ -45,32 +45,34 @@ const fazerLogin = (email, senha, callback) => {
     );
 
     callback(null, { token, usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, nivel: usuario.nivel } });
-  });
+  } catch (err) {
+    callback({ erro: 'Erro no banco de dados' });
+  }
 };
 
 // Função para registrar novo usuário (admin only)
 const registrarUsuario = (nome, email, senha, nivel, callback) => {
-  bcrypt.hash(senha, 10, (err, hash) => {
-    if (err) return callback({ erro: 'Erro ao criptografar senha' });
+  try {
+    const hash = bcrypt.hashSync(senha, 10);
 
-    db.run(
-      'INSERT INTO usuarios (nome, email, senha, nivel) VALUES (?, ?, ?, ?)',
-      [nome, email, hash, nivel],
-      function(err) {
-        if (err) return callback({ erro: 'Email já cadastrado' });
-        callback(null, { mensagem: 'Usuário criado com sucesso' });
-      }
-    );
-  });
+    const stmt = db.prepare('INSERT INTO usuarios (nome, email, senha, nivel) VALUES (?, ?, ?, ?)');
+    stmt.run(nome, email, hash, nivel);
+
+    callback(null, { mensagem: 'Usuário criado com sucesso' });
+  } catch (err) {
+    callback({ erro: 'Email já cadastrado' });
+  }
 };
 
 // Função para registrar ação (log)
 const registrarLog = (usuarioId, acao, tabela, registroId, descricao, callback) => {
-  db.run(
-    'INSERT INTO logs (usuario_id, acao, tabela, registro_id, descricao) VALUES (?, ?, ?, ?, ?)',
-    [usuarioId, acao, tabela, registroId, descricao],
-    callback
-  );
+  try {
+    const stmt = db.prepare('INSERT INTO logs (usuario_id, acao, tabela, registro_id, descricao) VALUES (?, ?, ?, ?, ?)');
+    stmt.run(usuarioId, acao, tabela, registroId, descricao);
+    if (callback) callback(null);
+  } catch (err) {
+    if (callback) callback(err);
+  }
 };
 
 module.exports = {

@@ -23,10 +23,13 @@ router.post('/registrar', verificarToken, verificarAdmin, (req, res) => {
 });
 
 router.get('/usuarios', verificarToken, verificarAdmin, (req, res) => {
-  db.all('SELECT id, nome, email, nivel, ativo, data_cadastro FROM usuarios', [], (err, rows) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  try {
+    const stmt = db.prepare('SELECT id, nome, email, nivel, ativo, data_cadastro FROM usuarios');
+    const rows = stmt.all();
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 router.put('/usuarios/:id', verificarToken, verificarAdmin, (req, res) => {
@@ -37,27 +40,19 @@ router.put('/usuarios/:id', verificarToken, verificarAdmin, (req, res) => {
     return res.status(400).json({ erro: 'Nome é obrigatório' });
   }
 
-  if (senha) {
-    const senhaHash = bcrypt.hashSync(senha, 10);
-    db.run(
-      'UPDATE usuarios SET nome = ?, email = ?, nivel = ?, senha = ? WHERE id = ?',
-      [nome, email, nivel, senhaHash, userId],
-      (err) => {
-        if (err) return res.status(400).json({ erro: err.message });
-        registrarLog(req.usuario.id, 'UPDATE', 'usuarios', userId, `Usuário: ${nome}`);
-        res.json({ mensagem: 'Usuário atualizado' });
-      }
-    );
-  } else {
-    db.run(
-      'UPDATE usuarios SET nome = ?, email = ?, nivel = ? WHERE id = ?',
-      [nome, email, nivel, userId],
-      (err) => {
-        if (err) return res.status(400).json({ erro: err.message });
-        registrarLog(req.usuario.id, 'UPDATE', 'usuarios', userId, `Usuário: ${nome}`);
-        res.json({ mensagem: 'Usuário atualizado' });
-      }
-    );
+  try {
+    if (senha) {
+      const senhaHash = bcrypt.hashSync(senha, 10);
+      const stmt = db.prepare('UPDATE usuarios SET nome = ?, email = ?, nivel = ?, senha = ? WHERE id = ?');
+      stmt.run(nome, email, nivel, senhaHash, userId);
+    } else {
+      const stmt = db.prepare('UPDATE usuarios SET nome = ?, email = ?, nivel = ? WHERE id = ?');
+      stmt.run(nome, email, nivel, userId);
+    }
+    registrarLog(req.usuario.id, 'UPDATE', 'usuarios', userId, `Usuário: ${nome}`);
+    res.json({ mensagem: 'Usuário atualizado' });
+  } catch (err) {
+    res.status(400).json({ erro: err.message });
   }
 });
 
@@ -68,107 +63,117 @@ router.delete('/usuarios/:id', verificarToken, verificarAdmin, (req, res) => {
     return res.status(403).json({ erro: 'Você não pode deletar sua própria conta!' });
   }
 
-  db.run('DELETE FROM usuarios WHERE id = ?', [userId], (err) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  try {
+    const stmt = db.prepare('DELETE FROM usuarios WHERE id = ?');
+    stmt.run(userId);
     registrarLog(req.usuario.id, 'DELETE', 'usuarios', userId, 'Usuário deletado');
     res.json({ mensagem: 'Usuário deletado' });
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 // ===== CLIENTES =====
 router.get('/clientes', verificarToken, (req, res) => {
-  db.all('SELECT * FROM clientes ORDER BY data_cadastro DESC', [], (err, rows) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  try {
+    const stmt = db.prepare('SELECT * FROM clientes ORDER BY data_cadastro DESC');
+    const rows = stmt.all();
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 router.post('/clientes', verificarToken, (req, res) => {
   const { nome, email, telefone } = req.body;
-  db.run(
-    'INSERT INTO clientes (nome, email, telefone, criado_por) VALUES (?, ?, ?, ?)',
-    [nome, email, telefone, req.usuario.id],
-    function(err) {
-      if (err) return res.status(400).json({ erro: 'Email já cadastrado' });
-      registrarLog(req.usuario.id, 'CREATE', 'clientes', this.lastID, `Cliente: ${nome}`);
-      res.json({ id: this.lastID, mensagem: 'Cliente cadastrado' });
-    }
-  );
+  try {
+    const stmt = db.prepare('INSERT INTO clientes (nome, email, telefone, criado_por) VALUES (?, ?, ?, ?)');
+    const result = stmt.run(nome, email, telefone, req.usuario.id);
+    registrarLog(req.usuario.id, 'CREATE', 'clientes', result.lastInsertRowid, `Cliente: ${nome}`);
+    res.json({ id: result.lastInsertRowid, mensagem: 'Cliente cadastrado' });
+  } catch (err) {
+    res.status(400).json({ erro: 'Email já cadastrado' });
+  }
 });
 
 router.put('/clientes/:id', verificarToken, (req, res) => {
   const { nome, email, telefone } = req.body;
-  db.run(
-    'UPDATE clientes SET nome = ?, email = ?, telefone = ? WHERE id = ?',
-    [nome, email, telefone, req.params.id],
-    (err) => {
-      if (err) return res.status(400).json({ erro: 'Email já cadastrado' });
-      registrarLog(req.usuario.id, 'UPDATE', 'clientes', req.params.id, `Cliente: ${nome}`);
-      res.json({ mensagem: 'Cliente atualizado' });
-    }
-  );
+  try {
+    const stmt = db.prepare('UPDATE clientes SET nome = ?, email = ?, telefone = ? WHERE id = ?');
+    stmt.run(nome, email, telefone, req.params.id);
+    registrarLog(req.usuario.id, 'UPDATE', 'clientes', req.params.id, `Cliente: ${nome}`);
+    res.json({ mensagem: 'Cliente atualizado' });
+  } catch (err) {
+    res.status(400).json({ erro: 'Email já cadastrado' });
+  }
 });
 
 router.delete('/clientes/:id', verificarToken, verificarAdmin, (req, res) => {
-  db.run('DELETE FROM clientes WHERE id = ?', [req.params.id], (err) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  try {
+    const stmt = db.prepare('DELETE FROM clientes WHERE id = ?');
+    stmt.run(req.params.id);
     registrarLog(req.usuario.id, 'DELETE', 'clientes', req.params.id, 'Cliente deletado');
     res.json({ mensagem: 'Cliente deletado' });
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 router.get('/clientes/buscar/:termo', verificarToken, (req, res) => {
   const termo = `%${req.params.termo}%`;
-  db.all(
-    'SELECT * FROM clientes WHERE nome LIKE ? OR email LIKE ? OR telefone LIKE ? ORDER BY nome',
-    [termo, termo, termo],
-    (err, rows) => {
-      if (err) return res.status(500).json({ erro: err.message });
-      res.json(rows);
-    }
-  );
+  try {
+    const stmt = db.prepare('SELECT * FROM clientes WHERE nome LIKE ? OR email LIKE ? OR telefone LIKE ? ORDER BY nome');
+    const rows = stmt.all(termo, termo, termo);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 // ===== PRODUTOS =====
 router.get('/produtos', verificarToken, (req, res) => {
-  db.all('SELECT * FROM produtos ORDER BY nome', [], (err, rows) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  try {
+    const stmt = db.prepare('SELECT * FROM produtos ORDER BY nome');
+    const rows = stmt.all();
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 router.post('/produtos', verificarToken, (req, res) => {
   const { nome, descricao, preco, quantidade_estoque } = req.body;
-  db.run(
-    'INSERT INTO produtos (nome, descricao, preco, quantidade_estoque, criado_por) VALUES (?, ?, ?, ?, ?)',
-    [nome, descricao, preco, quantidade_estoque, req.usuario.id],
-    function(err) {
-      if (err) return res.status(400).json({ erro: err.message });
-      registrarLog(req.usuario.id, 'CREATE', 'produtos', this.lastID, `Produto: ${nome}`);
-      res.json({ id: this.lastID, mensagem: 'Produto cadastrado' });
-    }
-  );
+  try {
+    const stmt = db.prepare('INSERT INTO produtos (nome, descricao, preco, quantidade_estoque, criado_por) VALUES (?, ?, ?, ?, ?)');
+    const result = stmt.run(nome, descricao, preco, quantidade_estoque, req.usuario.id);
+    registrarLog(req.usuario.id, 'CREATE', 'produtos', result.lastInsertRowid, `Produto: ${nome}`);
+    res.json({ id: result.lastInsertRowid, mensagem: 'Produto cadastrado' });
+  } catch (err) {
+    res.status(400).json({ erro: err.message });
+  }
 });
 
 router.put('/produtos/:id', verificarToken, (req, res) => {
   const { nome, descricao, preco, quantidade_estoque } = req.body;
-  db.run(
-    'UPDATE produtos SET nome = ?, descricao = ?, preco = ?, quantidade_estoque = ? WHERE id = ?',
-    [nome, descricao, preco, quantidade_estoque, req.params.id],
-    (err) => {
-      if (err) return res.status(400).json({ erro: err.message });
-      registrarLog(req.usuario.id, 'UPDATE', 'produtos', req.params.id, `Produto: ${nome}`);
-      res.json({ mensagem: 'Produto atualizado' });
-    }
-  );
+  try {
+    const stmt = db.prepare('UPDATE produtos SET nome = ?, descricao = ?, preco = ?, quantidade_estoque = ? WHERE id = ?');
+    stmt.run(nome, descricao, preco, quantidade_estoque, req.params.id);
+    registrarLog(req.usuario.id, 'UPDATE', 'produtos', req.params.id, `Produto: ${nome}`);
+    res.json({ mensagem: 'Produto atualizado' });
+  } catch (err) {
+    res.status(400).json({ erro: err.message });
+  }
 });
 
 router.delete('/produtos/:id', verificarToken, verificarAdmin, (req, res) => {
-  db.run('DELETE FROM produtos WHERE id = ?', [req.params.id], (err) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  try {
+    const stmt = db.prepare('DELETE FROM produtos WHERE id = ?');
+    stmt.run(req.params.id);
     registrarLog(req.usuario.id, 'DELETE', 'produtos', req.params.id, 'Produto deletado');
     res.json({ mensagem: 'Produto deletado' });
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 // ===== VENDAS =====
@@ -180,10 +185,13 @@ router.get('/vendas', verificarToken, (req, res) => {
     JOIN usuarios u ON v.usuario_id = u.id
     ORDER BY v.data_venda DESC
   `;
-  db.all(sql, [], (err, rows) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  try {
+    const stmt = db.prepare(sql);
+    const rows = stmt.all();
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 router.get('/vendas/itens/:vendaId', verificarToken, (req, res) => {
@@ -193,10 +201,13 @@ router.get('/vendas/itens/:vendaId', verificarToken, (req, res) => {
     JOIN produtos p ON iv.produto_id = p.id
     WHERE iv.venda_id = ?
   `;
-  db.all(sql, [req.params.vendaId], (err, rows) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  try {
+    const stmt = db.prepare(sql);
+    const rows = stmt.all(req.params.vendaId);
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 router.post('/vendas', verificarToken, (req, res) => {
@@ -207,38 +218,25 @@ router.post('/vendas', verificarToken, (req, res) => {
     valor_total += item.subtotal;
   });
 
-  db.run(
-    'INSERT INTO vendas (cliente_id, usuario_id, valor_total) VALUES (?, ?, ?)',
-    [cliente_id, req.usuario.id, valor_total],
-    function(err) {
-      if (err) return res.status(400).json({ erro: err.message });
-      
-      const ventaId = this.lastID;
-      let processados = 0;
+  try {
+    const stmt = db.prepare('INSERT INTO vendas (cliente_id, usuario_id, valor_total) VALUES (?, ?, ?)');
+    const result = stmt.run(cliente_id, req.usuario.id, valor_total);
+    const ventaId = result.lastInsertRowid;
 
-      // Inserir itens
-      itens.forEach(item => {
-        db.run(
-          'INSERT INTO itens_venda (venda_id, produto_id, quantidade, preco_unitario, subtotal) VALUES (?, ?, ?, ?, ?)',
-          [ventaId, item.produto_id, item.quantidade, item.preco_unitario, item.subtotal],
-          (err) => {
-            if (!err) {
-              // Atualizar estoque
-              db.run(
-                'UPDATE produtos SET quantidade_estoque = quantidade_estoque - ? WHERE id = ?',
-                [item.quantidade, item.produto_id]
-              );
-            }
-            processados++;
-            if (processados === itens.length) {
-              registrarLog(req.usuario.id, 'CREATE', 'vendas', ventaId, `Venda: R$ ${valor_total.toFixed(2)}`);
-              res.json({ id: ventaId, mensagem: 'Venda registrada' });
-            }
-          }
-        );
-      });
-    }
-  );
+    // Inserir itens
+    const itemStmt = db.prepare('INSERT INTO itens_venda (venda_id, produto_id, quantidade, preco_unitario, subtotal) VALUES (?, ?, ?, ?, ?)');
+    const estoqueStmt = db.prepare('UPDATE produtos SET quantidade_estoque = quantidade_estoque - ? WHERE id = ?');
+
+    itens.forEach(item => {
+      itemStmt.run(ventaId, item.produto_id, item.quantidade, item.preco_unitario, item.subtotal);
+      estoqueStmt.run(item.quantidade, item.produto_id);
+    });
+
+    registrarLog(req.usuario.id, 'CREATE', 'vendas', ventaId, `Venda: R$ ${valor_total.toFixed(2)}`);
+    res.json({ id: ventaId, mensagem: 'Venda registrada' });
+  } catch (err) {
+    res.status(400).json({ erro: err.message });
+  }
 });
 
 // ===== DASHBOARD =====
@@ -246,39 +244,28 @@ router.get('/dashboard', verificarToken, (req, res) => {
   const today = new Date();
   const mesAtual = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
 
-  Promise.all([
-    new Promise((resolve) => {
-      db.get('SELECT COUNT(*) as total FROM clientes', [], (err, row) => {
-        resolve(row?.total || 0);
-      });
-    }),
-    new Promise((resolve) => {
-      db.get('SELECT COUNT(*) as total FROM produtos', [], (err, row) => {
-        resolve(row?.total || 0);
-      });
-    }),
-    new Promise((resolve) => {
-      db.get('SELECT COUNT(*) as total FROM vendas', [], (err, row) => {
-        resolve(row?.total || 0);
-      });
-    }),
-    new Promise((resolve) => {
-      db.get(
-        'SELECT SUM(valor_total) as total FROM vendas WHERE strftime("%Y-%m", data_venda) = ?',
-        [mesAtual],
-        (err, row) => {
-          resolve(row?.total || 0);
-        }
-      );
-    })
-  ]).then(([clientes, produtos, vendas, faturamento]) => {
+  try {
+    const clientesStmt = db.prepare('SELECT COUNT(*) as total FROM clientes');
+    const clientes = clientesStmt.get().total;
+
+    const produtosStmt = db.prepare('SELECT COUNT(*) as total FROM produtos');
+    const produtos = produtosStmt.get().total;
+
+    const vendasStmt = db.prepare('SELECT COUNT(*) as total FROM vendas');
+    const vendas = vendasStmt.get().total;
+
+    const faturamentoStmt = db.prepare('SELECT SUM(valor_total) as total FROM vendas WHERE strftime("%Y-%m", data_venda) = ?');
+    const faturamento = faturamentoStmt.get(mesAtual).total || 0;
+
     res.json({ 
       total_clientes: clientes,
       total_produtos: produtos,
       total_vendas: vendas,
       faturamento_mes: faturamento
     });
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 // ===== RELATÓRIOS =====
@@ -289,10 +276,13 @@ router.get('/relatorio/vendas-por-data', verificarToken, (req, res) => {
     GROUP BY DATE(data_venda)
     ORDER BY data DESC
   `;
-  db.all(sql, [], (err, rows) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  try {
+    const stmt = db.prepare(sql);
+    const rows = stmt.all();
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 router.get('/relatorio/produtos-vendidos', verificarToken, (req, res) => {
