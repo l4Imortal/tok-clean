@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+bash: cd: backend: No such file or directory<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -1632,49 +1632,78 @@
 
   // ===== RELATÓRIOS =====
   async function carregarRelatorios() {
-    try {
-      const [resDatas, resProdutos] = await Promise.all([
-        fetch(`${API_URL}/relatorio/vendas-por-data`, {
-          headers: { 'Authorization': `Bearer ${estadoApp.token}` }
-        }),
-        fetch(`${API_URL}/relatorio/produtos-vendidos`, {
-          headers: { 'Authorization': `Bearer ${estadoApp.token}` }
-        })
-      ]);
+  const tbodyDatas = document.querySelector('#tabela-relatorio-datas tbody');
+  const tbodyProdutos = document.querySelector('#tabela-relatorio-produtos tbody');
 
+  // Mostra loading
+  tbodyDatas.innerHTML = '<tr><td colspan="3">Carregando...</td></tr>';
+  tbodyProdutos.innerHTML = '<tr><td colspan="3">Carregando...</td></tr>';
+
+  // Busca vendas por data
+  try {
+    const resDatas = await fetch(`${API_URL}/relatorio/vendas-por-data`, {
+      headers: { 'Authorization': `Bearer ${estadoApp.token}` }
+    });
+    if (resDatas.ok) {
       const datas = await resDatas.json();
-      const produtos = await resProdutos.json();
-
-      // Vendas por data
-      let htmlDatas = '';
-      datas.forEach(d => {
-        htmlDatas += `
-          <tr>
-            <td>${new Date(d.data).toLocaleDateString('pt-BR')}</td>
-            <td>${d.quantidade}</td>
-            <td><strong>R$ ${Number(d.total).toFixed(2).replace('.', ',')}</strong></td>
-          </tr>
-        `;
-      });
-      document.querySelector('#tabela-relatorio-datas tbody').innerHTML = htmlDatas || '<tr><td colspan="3" style="text-align:center;">Nenhum dado</td></tr>';
-
-      // Produtos mais vendidos
-      let htmlProdutos = '';
-      produtos.forEach(p => {
-        htmlProdutos += `
-          <tr>
-            <td><strong>${p.nome}</strong></td>
-            <td>${p.quantidade_vendida}</td>
-            <td>R$ ${Number(p.total).toFixed(2).replace('.', ',')}</td>
-          </tr>
-        `;
-      });
-      document.querySelector('#tabela-relatorio-produtos tbody').innerHTML = htmlProdutos || '<tr><td colspan="3" style="text-align:center;">Nenhum dado</td></tr>';
-    } catch (err) {
-      console.error(err);
+      if (datas.length) {
+        let html = '';
+        datas.forEach(d => {
+          html += `
+            <tr>
+              <td>${new Date(d.data).toLocaleDateString('pt-BR')}</td>
+              <td>${d.quantidade}</td>
+              <td><strong>R$ ${Number(d.total).toFixed(2).replace('.', ',')}</strong></td>
+            </tr>
+          `;
+        });
+        tbodyDatas.innerHTML = html;
+      } else {
+        tbodyDatas.innerHTML = '<tr><td colspan="3">Nenhuma venda registrada</td></tr>';
+      }
+    } else {
+      throw new Error(`HTTP ${resDatas.status}`);
     }
+  } catch (err) {
+    console.error('Erro em vendas-por-data:', err);
+    tbodyDatas.innerHTML = '<tr><td colspan="3">Erro ao carregar vendas por data</td></tr>';
   }
 
+  // Busca produtos mais vendidos (com tratamento isolado)
+  try {
+    const resProdutos = await fetch(`${API_URL}/relatorio/produtos-vendidos`, {
+      headers: { 'Authorization': `Bearer ${estadoApp.token}` }
+    });
+    if (resProdutos.ok) {
+      const produtos = await resProdutos.json();
+      if (produtos.length) {
+        let html = '';
+        produtos.forEach(p => {
+          html += `
+            <tr>
+              <td><strong>${p.nome}</strong></td>
+              <td>${p.quantidade_vendida}</td>
+              <td>R$ ${Number(p.total).toFixed(2).replace('.', ',')}</td>
+            </tr>
+          `;
+        });
+        tbodyProdutos.innerHTML = html;
+      } else {
+        tbodyProdutos.innerHTML = '<tr><td colspan="3">Nenhum produto vendido</td></tr>';
+      }
+    } else {
+      // Se for 500, exibe mensagem amigável
+      if (resProdutos.status === 500) {
+        tbodyProdutos.innerHTML = '<tr><td colspan="3">Erro interno no servidor (500). Contate o administrador.</td></tr>';
+      } else {
+        throw new Error(`HTTP ${resProdutos.status}`);
+      }
+    }
+  } catch (err) {
+    console.error('Erro em produtos-vendidos:', err);
+    tbodyProdutos.innerHTML = '<tr><td colspan="3">Erro ao carregar produtos mais vendidos</td></tr>';
+  }
+}
   // ===== LOGS =====
   async function carregarLogs() {
     try {
