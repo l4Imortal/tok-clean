@@ -287,18 +287,20 @@ router.get('/relatorio/vendas-por-data', verificarToken, (req, res) => {
 
 router.get('/relatorio/produtos-vendidos', verificarToken, (req, res) => {
   const sql = `
-    SELECT p.nome, SUM(iv.quantidade) as quantidade_vendida, SUM(iv.subtotal) as total
+    SELECT p.nome, SUM(iv.quantidade) as quantidade_vendida, SUM(iv.quantidade * iv.preco_unitario) as total
     FROM itens_venda iv
     JOIN produtos p ON iv.produto_id = p.id
     GROUP BY p.id
     ORDER BY quantidade_vendida DESC
   `;
-  db.all(sql, [], (err, rows) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  try {
+    const stmt = db.prepare(sql);
+    const rows = stmt.all();
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
-
 // ===== HISTÓRICO/LOGS =====
 router.get('/logs', verificarToken, verificarAdmin, (req, res) => {
   const sql = `
